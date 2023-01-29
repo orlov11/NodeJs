@@ -1,6 +1,7 @@
 const fs = require('fs/promises')
 const path = require('path')
 const chalk = require('chalk')
+const { type } = require('os')
 
 const notesPath = path.join(__dirname, 'db.json')
 
@@ -22,6 +23,7 @@ async function getNote() {
 	const notes = await fs.readFile(notesPath, { encoding: 'utf-8' })
 	return Array.isArray(JSON.parse(notes)) ? JSON.parse(notes) : []
 }
+
 async function printNotes() {
 	const notes = await getNote()
 	console.log(chalk.yellow('List notes:'))
@@ -39,8 +41,21 @@ async function removeNotes(id) {
 	console.log(chalk.red('Note was remove'))
 }
 
+async function renameNotes(title, id) {
+	const notes = await getNote()
+	const newNote = notes.map(note => {
+		if (note.id === id) {
+			return { ...note, title }
+		}
+		return note
+	})
+	await saveNote(newNote)
+	console.log(chalk.red('Note was rename'))
+}
+
 module.exports = {
 	addNotes,
-	printNotes,
+	renameNotes,
+	getNote,
 	removeNotes
 }

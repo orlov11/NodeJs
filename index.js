@@ -1,41 +1,60 @@
-const yargs = require('yargs')
-const { addNotes, printNotes, removeNotes } = require('./notesControler')
+const chalk = require('chalk')
+const express = require('express')
+const path = require('path')
+const {
+	addNotes,
+	getNote,
+	removeNotes,
+	renameNotes
+} = require('./notesControler')
 
-yargs.command({
-	command: 'add',
-	describe: 'add new note in list',
-	builder: {
-		title: {
-			type: 'string',
-			describe: 'note title',
-			demandOption: true
-		}
-	},
-	handler({ title }) {
-		addNotes(title)
-	}
-})
-yargs.command({
-	command: 'remove',
-	describe: 'remove note',
-	builder: {
-		id: {
-			type: 'string',
-			describe: 'note id for remove',
-			demandOption: true
-		}
-	},
-	handler({ id }) {
-		removeNotes(id)
-	}
-})
+const port = 3000
+const app = express()
+app.use(
+	express.urlencoded({
+		extended: true
+	})
+)
+app.use(express.json())
+app.use(express.static(path.join(__dirname, 'public')))
+app.set('view engine', 'ejs')
+app.set('views', 'base')
 
-yargs.command({
-	command: 'list',
-	describe: 'show all note',
-	handler() {
-		printNotes()
-	}
+app.get('/', async (req, res) => {
+	res.render('index', {
+		title: 'Express App',
+		notes: await getNote(),
+		create: false
+	})
+})
+app.post('/', async (req, res) => {
+	await addNotes(req.body.title)
+	res.render('index', {
+		title: 'Express App',
+		notes: await getNote(),
+		create: true
+	})
 })
 
-yargs.parse()
+app.delete('/:id', async (req, res) => {
+	await removeNotes(req.params.id)
+	res.render('index', {
+		title: 'Express App',
+		notes: await getNote(),
+		create: false
+	})
+})
+
+app.put('/:id', async (req, res) => {
+	await renameNotes(req.body.title, req.body.id)
+
+	res.render('index', {
+		title: 'Express App',
+		notes: await getNote(),
+		create: false
+	})
+})
+
+app.listen(port, () => {
+	console.log(chalk.red(`Sever has been started on port: ${port}`))
+})
